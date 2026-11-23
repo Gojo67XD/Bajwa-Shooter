@@ -5,12 +5,12 @@ jmp start
 
 clrscreen:
 
-; pushing normal registers 
+; pushing norml registers 
 push ax
 push cx 
 push di  
 push es
-pushf ; pushing the flags 
+pushf ; pushing the flag 
 
 ; opening vedio mem in es
 mov ax , 0xb800
@@ -427,6 +427,7 @@ mov ax , 0xb800
 mov es , ax 
 
 cld 
+; drawing score label 
 mov di , 160  ; 2nd row 
 mov si , scoretag ; si now points to score label 
 mov cx , scoretaglen  ; size of label score: if u change it change it too else wont work 
@@ -434,8 +435,13 @@ drawing_score_label:
 lodsb 
 mov ah , 0x0E 
 stosw
-loop drawing_score_label  
+loop drawing_score_label 
 
+mov ax , [score] 
+push ax 
+call printScore  
+
+; drawing life label 
 mov di , 290  ; 2nd row 65th colum 
 mov si , lifetag ; si now points to life label 
 mov cx , lifetaglen
@@ -445,6 +451,15 @@ mov ah , 0x0B
 stosw 
 loop drawing_life_label 
 
+; drawing hearts 
+mov di , [heartInd]   ; di now has offset of the heartInd 
+mov cx , 3  ; for 3 hearts 
+mov al , 0x03 ; the ascii for heart shape 
+mov ah , [heartatrr] ; the color of the hearts  
+cld ; flag direction 
+rep stosw  
+
+; drawing game name 
 mov di , [nameInd] 
 mov si , gamename 
 mov cx , gamenamelen
@@ -463,6 +478,53 @@ pop cx
 pop bx 
 pop ax 
 ret 
+
+printScore:
+push bp 
+mov bp , sp 
+push ax 
+push bx 
+push cx 
+push dx 
+push si 
+push di 
+push es 
+pushf 
+
+mov ax , 0xb800 
+mov es , ax 
+mov ax , [bp + 4] ; player score 
+mov bx , 10 ; base 10 
+mov cx , 3 ; for counter 
+
+countnum: ; separate 3 fixed nums from the score 
+xor dx , dx  ; to empty the dx bec div bx will put stuff in dl so dh could ruin it 
+div bx ; ax = quotient and dx , remiander 
+add dl , 0x30 ; convert to ascii number 
+push dx ; push on stack 
+loop countnum ; 3 times 
+ 
+mov cx , 3 
+mov di , [scoreInd]  ; score display location 
+
+drawing_score:
+pop dx ; getting the digit from the stack 
+mov dh , 0x0E ; yellow color 
+mov [es:di] , dx  ; writing it 
+add di , 2 
+loop drawing_score ; 3 times 
+
+popf 
+pop es 
+pop di 
+pop si 
+pop dx 
+pop cx 
+pop bx 
+pop ax 
+pop bp 
+ret 2 ; 2 is for the playerscore 
+
 
 
 delay: ; we use big counters for delays 
@@ -588,3 +650,7 @@ lifetaglen: equ $ - lifetag ; constant for life tag length
 gamename: db 'Bajwa Shooter' ; 11 length 
 gamenamelen: equ $ - gamename ; constant for gamename length 
 nameInd: dw 224 ; offset from where the tag starts 
+heartInd: dw 302 ; offset from where hearts start 
+heartatrr: db 0x0B ; heart color 
+scoreInd: dw 172 ; ind of score display 
+score: dw 000 ; score of the player 
