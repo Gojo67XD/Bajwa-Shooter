@@ -5,12 +5,12 @@ jmp start
 
 clrscreen:
 
-; pushing norml registers 
+; pushing normal registers 
 push ax
 push cx 
 push di  
 push es
-pushf ; pushing the flag 
+pushf ; pushing the flags 
 
 ; opening vedio mem in es
 mov ax , 0xb800
